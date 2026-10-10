@@ -9,7 +9,7 @@ Editor de fluxogramas e mapas mentais em HTML puro, feito para substituir Whimsi
 - **JS em IIFE**, modo estrito, sem framework. Manipulação direta de DOM.
 - **Render híbrido**: nós são `<div>` posicionados em coordenadas de mundo; conexões são `<path>` dentro de um `<svg>` no mesmo container transformado. Isso permite texto editável nativo (`contenteditable`) dentro dos nós.
 - **Canvas infinito** via `transform: translate(x,y) scale(k)` no `#world`, com `transform-origin: 0 0`. O fundo pontilhado do `#stage` acompanha pan e zoom pelo `background-position` / `background-size`.
-- **Tema claro e escuro** por tokens CSS em `:root`, redefinidos em `@media (prefers-color-scheme: dark)` e em `:root[data-theme="dark"]`. Nenhuma cor literal fora dos tokens. A paleta dos nós tem 8 famílias (`slate, blue, teal, green, amber, orange, rose, violet`), cada uma com três tokens: preenchimento `--c-<cor>-f`, traço `--c-<cor>-s`, texto `--c-<cor>-i`.
+- **Tema claro e escuro** por tokens CSS em `:root`, redefinidos em `@media (prefers-color-scheme: dark)` e em `:root[data-theme="dark"]`. Nenhuma cor literal fora dos tokens. A paleta dos nós tem 16 famílias (`slate, gray, blue, indigo, cyan, teal, green, lime, yellow, amber, orange, brown, red, rose, magenta, violet`), com nomes em português em `COLOR_NAMES`, cada uma com três tokens: preenchimento `--c-<cor>-f`, traço `--c-<cor>-s`, texto `--c-<cor>-i`.
 - **Persistência** em `localStorage` sob a chave `prancheta.v1`, sempre dentro de `try/catch`. Tema em `prancheta.theme`.
 
 ## Modelo de dados
@@ -27,7 +27,7 @@ view = { x, y, k }   // pan e zoom
 - Estilo do nó: `fill:'solid'` (fundo `-i`, texto `-f`), `bw` espessura da borda (0 a 4, padrão 1.5), `al` alinhamento do texto. `SHAPE_DEFAULTS` define tamanho e estilo com que cada formato nasce.
 - `image`: `img` (dataURL reduzido a 1400 px), `fit:'cover'|'contain'`. Nasce pela ferramenta da barra (`I`) ou colando com Ctrl+V.
 - `lane` (raia): faixa de fundo com título em pé numa barra de 56 px. Fica atrás das conexões, só é clicável pela barra e, ao ser arrastada, leva junto os nós que estão inteiros dentro dela.
-- `tbl` (só em `shape:'table'`): `{ cells:[[{t, c?, solid?, v?, rs?, cs?}]], colW:[pesos], rowH:[px|null], al:['left'|'center'|'right' por coluna], hRow, hCol, head:'strong'|'soft'|'plain', lines:'grid'|'rows'|'cols'|'outer'|'none', zebra, pad:'compact'|'normal'|'wide' }`. Na célula, `c` é a cor de fundo (uma das 8 famílias), `solid` usa o tom forte, `v` põe o texto em pé (90°), `rs`/`cs` são as mesclas (rowspan/colspan).
+- `tbl` (só em `shape:'table'`): `{ cells:[[{t, c?, solid?, v?, rs?, cs?}]], colW:[pesos], rowH:[px|null], al:['left'|'center'|'right' por coluna], hRow, hCol, head:'strong'|'soft'|'plain', lines:'grid'|'rows'|'cols'|'outer'|'none', zebra, pad:'compact'|'normal'|'wide' }`. Na célula, `c` é a cor de fundo (uma das 16 famílias), `solid` usa o tom forte, `v` põe o texto em pé (90°), `rs`/`cs` são as mesclas (rowspan/colspan).
 - `side`: `auto | t | r | b | l` (auto escolhe o lado pelo vetor entre os centros)
 - `style`: `solid | dashed | dotted`
 - `curve`: `ortho | curved | straight`

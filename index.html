@@ -28,6 +28,14 @@
   --c-orange-f:#FBE2D4;--c-orange-s:#D4764C;--c-orange-i:#5A2B12;
   --c-rose-f:#FBE0E6;  --c-rose-s:#D16A84;  --c-rose-i:#5A1B2B;
   --c-violet-f:#EBE4FB;--c-violet-s:#8B74D4;--c-violet-i:#35215E;
+  --c-red-f:#FDE1DC;    --c-red-s:#E0533C;    --c-red-i:#5E1A10;
+  --c-magenta-f:#F6DFF7;--c-magenta-s:#B54BC0;--c-magenta-i:#4E1553;
+  --c-indigo-f:#E1E4FB; --c-indigo-s:#5361C9; --c-indigo-i:#1F2560;
+  --c-cyan-f:#D6F4F7;   --c-cyan-s:#2FB3C2;   --c-cyan-i:#0C4249;
+  --c-lime-f:#EAF5D3;   --c-lime-s:#86B83C;   --c-lime-i:#2E4510;
+  --c-yellow-f:#FFF6BF; --c-yellow-s:#D9C21E; --c-yellow-i:#4A4005;
+  --c-brown-f:#F0E3D6;  --c-brown-s:#A87652;  --c-brown-i:#47301D;
+  --c-gray-f:#ECEDF0;   --c-gray-s:#9AA1AE;   --c-gray-i:#2B2F38;
 }
 @media (prefers-color-scheme: dark){ :root:not([data-theme="light"]){
   color-scheme:dark;
@@ -45,6 +53,14 @@
   --c-orange-f:#3A2113;--c-orange-s:#C96C44;--c-orange-i:#FBD9C6;
   --c-rose-f:#391A23;  --c-rose-s:#C2627B;  --c-rose-i:#F9D3DC;
   --c-violet-f:#291E45;--c-violet-s:#7E6AC6;--c-violet-i:#E0D6F9;
+  --c-red-f:#3D1915;    --c-red-s:#D2553F;    --c-red-i:#FCD3CB;
+  --c-magenta-f:#34173A;--c-magenta-s:#B055BB;--c-magenta-i:#F3D3F6;
+  --c-indigo-f:#1E2147; --c-indigo-s:#6370CC; --c-indigo-i:#D9DDFB;
+  --c-cyan-f:#12343A;   --c-cyan-s:#36A9B7;   --c-cyan-i:#C7EFF4;
+  --c-lime-f:#26331A;   --c-lime-s:#7FAE3D;   --c-lime-i:#E1F0C6;
+  --c-yellow-f:#38330F; --c-yellow-s:#CDB928; --c-yellow-i:#FBF1B0;
+  --c-brown-f:#33251A;  --c-brown-s:#A3785A;  --c-brown-i:#EEDCCB;
+  --c-gray-f:#2A2D33;   --c-gray-s:#7B8290;   --c-gray-i:#E2E4E9;
 }}
 :root[data-theme="dark"]{
   color-scheme:dark;
@@ -62,6 +78,14 @@
   --c-orange-f:#3A2113;--c-orange-s:#C96C44;--c-orange-i:#FBD9C6;
   --c-rose-f:#391A23;  --c-rose-s:#C2627B;  --c-rose-i:#F9D3DC;
   --c-violet-f:#291E45;--c-violet-s:#7E6AC6;--c-violet-i:#E0D6F9;
+  --c-red-f:#3D1915;    --c-red-s:#D2553F;    --c-red-i:#FCD3CB;
+  --c-magenta-f:#34173A;--c-magenta-s:#B055BB;--c-magenta-i:#F3D3F6;
+  --c-indigo-f:#1E2147; --c-indigo-s:#6370CC; --c-indigo-i:#D9DDFB;
+  --c-cyan-f:#12343A;   --c-cyan-s:#36A9B7;   --c-cyan-i:#C7EFF4;
+  --c-lime-f:#26331A;   --c-lime-s:#7FAE3D;   --c-lime-i:#E1F0C6;
+  --c-yellow-f:#38330F; --c-yellow-s:#CDB928; --c-yellow-i:#FBF1B0;
+  --c-brown-f:#33251A;  --c-brown-s:#A3785A;  --c-brown-i:#EEDCCB;
+  --c-gray-f:#2A2D33;   --c-gray-s:#7B8290;   --c-gray-i:#E2E4E9;
 }
 *{box-sizing:border-box}
 [hidden]{display:none!important}
@@ -96,6 +120,14 @@ body{margin:0;background:var(--bg);color:var(--ink);font-family:var(--font-body)
 .node[data-color="orange"]{--n-f:var(--c-orange-f);--n-s:var(--c-orange-s);--n-i:var(--c-orange-i)}
 .node[data-color="rose"]{--n-f:var(--c-rose-f);--n-s:var(--c-rose-s);--n-i:var(--c-rose-i)}
 .node[data-color="violet"]{--n-f:var(--c-violet-f);--n-s:var(--c-violet-s);--n-i:var(--c-violet-i)}
+.node[data-color="red"]{--n-f:var(--c-red-f);--n-s:var(--c-red-s);--n-i:var(--c-red-i)}
+.node[data-color="magenta"]{--n-f:var(--c-magenta-f);--n-s:var(--c-magenta-s);--n-i:var(--c-magenta-i)}
+.node[data-color="indigo"]{--n-f:var(--c-indigo-f);--n-s:var(--c-indigo-s);--n-i:var(--c-indigo-i)}
+.node[data-color="cyan"]{--n-f:var(--c-cyan-f);--n-s:var(--c-cyan-s);--n-i:var(--c-cyan-i)}
+.node[data-color="lime"]{--n-f:var(--c-lime-f);--n-s:var(--c-lime-s);--n-i:var(--c-lime-i)}
+.node[data-color="yellow"]{--n-f:var(--c-yellow-f);--n-s:var(--c-yellow-s);--n-i:var(--c-yellow-i)}
+.node[data-color="brown"]{--n-f:var(--c-brown-f);--n-s:var(--c-brown-s);--n-i:var(--c-brown-i)}
+.node[data-color="gray"]{--n-f:var(--c-gray-f);--n-s:var(--c-gray-s);--n-i:var(--c-gray-i)}
 .nshape{position:absolute;left:0;top:0;overflow:visible}
 .nshape .fillpath{fill:var(--n-f);stroke:var(--n-s);stroke-width:calc(var(--bw,1.5)*1px)}
 .node.sel .nshape .fillpath{stroke:var(--sel);stroke-width:max(2.2px,calc(var(--bw,1.5)*1px))}
@@ -244,7 +276,8 @@ kbd{font-family:var(--font-mono);font-size:10.5px;background:var(--surface-3);bo
 #cellbar .cb-lbl{font-family:var(--font-ui);font-size:11px;font-weight:600;letter-spacing:.08em;text-transform:uppercase;color:var(--ink-3)}
 #cellbar .cb-row{display:flex;align-items:center;gap:8px}
 #cellbar .cb-row .lbl{width:38px;flex:none}
-#cellbar .chips{flex-wrap:nowrap}
+#cellbar .cb-row .chips{flex-wrap:wrap;width:225px}
+#cellbar > .chips{flex-wrap:nowrap}
 #cellbar .sw{width:21px;height:21px;border-radius:5px}
 
 #insp-tg{position:absolute;top:6px;right:6px;z-index:2;padding:6px}
@@ -381,7 +414,9 @@ const stage = $('#stage'), world = $('#world'), wires = $('#wires'), ghost = $('
 const SVGNS = 'http://www.w3.org/2000/svg';
 const uid = p => p + Math.random().toString(36).slice(2,9);
 const clamp = (v,a,b)=>Math.max(a,Math.min(b,v));
-const COLORS = ['slate','blue','teal','green','amber','orange','rose','violet'];
+const COLORS = ['slate','gray','blue','indigo','cyan','teal','green','lime','yellow','amber','orange','brown','red','rose','magenta','violet'];
+const COLOR_NAMES = {slate:'Neutro',gray:'Cinza',blue:'Azul',indigo:'Índigo',cyan:'Ciano',teal:'Verde-água',green:'Verde',lime:'Lima',
+  yellow:'Amarelo',amber:'Âmbar',orange:'Laranja',brown:'Marrom',red:'Vermelho',rose:'Rosa',magenta:'Magenta',violet:'Violeta'};
 const SHAPES = {
   process:'Processo', round:'Arredondado', terminal:'Início/fim', decision:'Decisão',
   data:'Dados', circle:'Círculo', note:'Nota', sticky:'Post-it', tag:'Etiqueta', star:'Estrela', text:'Texto livre'
@@ -856,8 +891,8 @@ function selCells(n){
   const soft=$('#cb-soft'), strong=$('#cb-strong');
   const none=mk('Sem cor','var(--surface)','var(--line-2)', n=>paintCells(n,null)); none.dataset.k='none'; soft.appendChild(none);
   COLORS.forEach(col=>{
-    const a=mk(col+' suave', `var(--c-${col}-f)`, `var(--c-${col}-s)`, n=>paintCells(n,col,false)); a.dataset.k=col+':0'; soft.appendChild(a);
-    const b=mk(col+' forte', `var(--c-${col}-i)`, `var(--c-${col}-s)`, n=>paintCells(n,col,true)); b.dataset.k=col+':1'; strong.appendChild(b);
+    const a=mk(COLOR_NAMES[col]+' suave', `var(--c-${col}-f)`, `var(--c-${col}-s)`, n=>paintCells(n,col,false)); a.dataset.k=col+':0'; soft.appendChild(a);
+    const b=mk(COLOR_NAMES[col]+' forte', `var(--c-${col}-i)`, `var(--c-${col}-s)`, n=>paintCells(n,col,true)); b.dataset.k=col+':1'; strong.appendChild(b);
   });
   $('#cb-h').onclick=apply(n=>selCells(n).forEach(x=>delete x.v));
   $('#cb-v').onclick=apply(n=>selCells(n).forEach(x=>{ x.v=true; }));
@@ -883,7 +918,11 @@ function updateCellBar(){
   const bw=bar.offsetWidth, bh=bar.offsetHeight;
   let top=u.top-app.top-bh-30;
   if(top<70) top=u.bottom-app.top+14;
-  const left=clamp((u.left+u.right)/2-app.left-bw/2, 12, app.width-bw-12);
+  // não cobre o painel lateral quando ele está aberto ao lado
+  const ip=$('#insp').getBoundingClientRect();
+  const sideBySide = ip.top < app.top+120 && ip.left > app.left+bw+24;
+  const maxRight = sideBySide ? ip.left-app.left-12 : app.width-12;
+  const left=clamp((u.left+u.right)/2-app.left-bw/2, 12, maxRight-bw);
   bar.style.left=left+'px'; bar.style.top=clamp(top,12,app.height-bh-12)+'px';
 }
 function paintCells(n, color, solid){
@@ -1502,7 +1541,7 @@ function renderInspector(){
     const f4=field('Cor'); const c4=div('chips');
     const bn=document.createElement('button'); bn.className='sw'; bn.style.background='var(--line-2)'; bn.title='Padrão';
     bn.setAttribute('aria-pressed', !ed.color); bn.onclick=()=>{ ed.color=null; snapshot(); render(); }; c4.appendChild(bn);
-    COLORS.slice(1).forEach(c=>{ const b=document.createElement('button'); b.className='sw'; b.title=c;
+    COLORS.slice(1).forEach(c=>{ const b=document.createElement('button'); b.className='sw'; b.title=COLOR_NAMES[c];
       b.style.background=`var(--c-${c}-s)`; b.style.borderColor=`var(--c-${c}-s)`;
       b.setAttribute('aria-pressed', ed.color===c);
       b.onclick=()=>{ ed.color=c; snapshot(); render(); }; c4.appendChild(b); });
@@ -1542,7 +1581,7 @@ function renderInspector(){
     });
     f.appendChild(chips); box.appendChild(f);
     const fc=field('Cor padrão'); const sws=div('chips');
-    COLORS.forEach(c=>{ const b=document.createElement('button'); b.className='sw';
+    COLORS.forEach(c=>{ const b=document.createElement('button'); b.className='sw'; b.title=COLOR_NAMES[c];
       b.style.background=`var(--c-${c}-f)`; b.style.borderColor=`var(--c-${c}-s)`;
       b.setAttribute('aria-pressed', lastColor===c);
       b.onclick=()=>{ lastColor=c; renderInspector(); }; sws.appendChild(b); });
@@ -1607,11 +1646,11 @@ function inspTable(box,n){
     none.style.background='var(--surface)'; none.setAttribute('aria-pressed', cells.every(x=>!x.c));
     none.onclick=()=>{ paintCells(n,null); commit(); }; soft.appendChild(none);
     COLORS.forEach(col=>{
-      const b=document.createElement('button'); b.className='sw'; b.title=col+' suave';
+      const b=document.createElement('button'); b.className='sw'; b.title=COLOR_NAMES[col]+' suave';
       b.style.background=`var(--c-${col}-f)`; b.style.borderColor=`var(--c-${col}-s)`;
       b.setAttribute('aria-pressed', allIs(col,false));
       b.onclick=()=>{ paintCells(n,col,false); commit(); }; soft.appendChild(b);
-      const s=document.createElement('button'); s.className='sw'; s.title=col+' forte';
+      const s=document.createElement('button'); s.className='sw'; s.title=COLOR_NAMES[col]+' forte';
       s.style.background=`var(--c-${col}-i)`; s.style.borderColor=`var(--c-${col}-s)`;
       s.setAttribute('aria-pressed', allIs(col,true));
       s.onclick=()=>{ paintCells(n,col,true); commit(); }; strong.appendChild(s);
@@ -1712,7 +1751,7 @@ function stepField(label, val, dec, inc){
 function colorField(n, multi, label){
   const fc=field(label||'Cor'); const sws=div('chips');
   COLORS.forEach(c=>{
-    const b=document.createElement('button'); b.className='sw'; b.title=c;
+    const b=document.createElement('button'); b.className='sw'; b.title=COLOR_NAMES[c];
     b.style.background=`var(--c-${c}-f)`; b.style.borderColor=`var(--c-${c}-s)`;
     b.setAttribute('aria-pressed', !multi && n.color===c);
     b.onclick=()=>{ sel.nodes.forEach(id=>{nodeById(id).color=c;}); lastColor=c; snapshot(); render(); };
