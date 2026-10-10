@@ -16,8 +16,8 @@
   --sel:#2B6CD4;
   --shadow:0 1px 2px rgba(16,18,24,.07), 0 10px 28px rgba(16,18,24,.10);
   --radius:10px;
-  --font-ui:'Archivo', system-ui, sans-serif;
-  --font-body:'IBM Plex Sans', system-ui, sans-serif;
+  --font-ui:'Bahnschrift', 'Archivo', system-ui, sans-serif;
+  --font-body:'Bahnschrift', 'IBM Plex Sans', system-ui, sans-serif;
   --font-mono:'IBM Plex Mono', ui-monospace, monospace;
   /* paleta dos nós: preenchimento / traço / texto */
   --c-slate-f:#FFFFFF; --c-slate-s:#8F98A9; --c-slate-i:#1A1D24;
@@ -238,10 +238,20 @@ kbd{font-family:var(--font-mono);font-size:10.5px;background:var(--surface-3);bo
 }
 
 /* ---------- Tabela ---------- */
+/* barra flutuante de cor e direção do texto da célula, linha ou coluna selecionada */
+#cellbar{z-index:30;padding:9px 10px;display:flex;flex-direction:column;gap:7px}
+#cellbar[hidden]{display:none}
+#cellbar .cb-lbl{font-family:var(--font-ui);font-size:11px;font-weight:600;letter-spacing:.08em;text-transform:uppercase;color:var(--ink-3)}
+#cellbar .cb-row{display:flex;align-items:center;gap:8px}
+#cellbar .cb-row .lbl{width:38px;flex:none}
+#cellbar .chips{flex-wrap:nowrap}
+#cellbar .sw{width:21px;height:21px;border-radius:5px}
+
 #insp-tg{position:absolute;top:6px;right:6px;z-index:2;padding:6px}
 #insp-tg svg{transition:transform .15s}
 #inspbody{display:flex;flex-direction:column;gap:14px}
-#inspbody > h3:first-child{padding-right:28px;line-height:20px}
+#inspbody > :first-child{padding-right:28px}
+#inspbody > h3:first-child{line-height:20px}
 #insp.min{width:auto;padding:4px;overflow:visible}
 #insp.min #inspbody{display:none}
 #insp.min #insp-tg{position:static}
@@ -339,6 +349,16 @@ kbd{font-family:var(--font-mono);font-size:10.5px;background:var(--surface-3);bo
     <div id="inspbody"></div>
   </div>
   <input type="file" id="imgpick" accept="image/*" hidden>
+  <div class="bar" id="cellbar" hidden>
+    <span class="cb-lbl" id="cb-lbl"></span>
+    <div class="cb-row"><span class="lbl">Suave</span><div class="chips" id="cb-soft"></div></div>
+    <div class="cb-row"><span class="lbl">Forte</span><div class="chips" id="cb-strong"></div></div>
+    <div class="chips">
+      <button class="chip" id="cb-h">Texto horizontal</button>
+      <button class="chip" id="cb-v">Texto vertical</button>
+      <button class="chip" id="cb-more">Mais opções</button>
+    </div>
+  </div>
 
   <div class="bar" id="status"><span id="stat-count"></span></div>
   <div class="bar" id="zoombar">
@@ -442,7 +462,9 @@ function applyView(){
   stage.style.backgroundSize = (24*view.k)+'px '+(24*view.k)+'px';
   stage.style.backgroundPosition = view.x+'px '+view.y+'px';
   $('#zlevel').textContent = Math.round(view.k*100)+'%';
+  updateCellBar();
 }
+const bodyFont = ()=>getComputedStyle(document.documentElement).getPropertyValue('--font-body').trim() || 'sans-serif';
 function zoomAt(cx,cy,factor){
   const k2 = clamp(view.k*factor, .2, 3.2);
   const r = stage.getBoundingClientRect(), px=cx-r.left, py=cy-r.top;
@@ -826,6 +848,44 @@ function selCells(n){
     else if(own[0]===ri && own[1]===ci) out.add(t.cells[ri][ci]); }));
   return [...out];
 }
+/* barra flutuante: montada uma vez, só reposicionada e atualizada a cada render */
+(function initCellBar(){
+  const apply=fn=>()=>{ const n=cellSel && nodeById(cellSel.node); if(!n) return; fn(n); render(); snapshot(); };
+  const mk=(title, bg, border, fn)=>{ const b=document.createElement('button'); b.className='sw'; b.title=title;
+    b.style.background=bg; b.style.borderColor=border; b.onclick=apply(fn); return b; };
+  const soft=$('#cb-soft'), strong=$('#cb-strong');
+  const none=mk('Sem cor','var(--surface)','var(--line-2)', n=>paintCells(n,null)); none.dataset.k='none'; soft.appendChild(none);
+  COLORS.forEach(col=>{
+    const a=mk(col+' suave', `var(--c-${col}-f)`, `var(--c-${col}-s)`, n=>paintCells(n,col,false)); a.dataset.k=col+':0'; soft.appendChild(a);
+    const b=mk(col+' forte', `var(--c-${col}-i)`, `var(--c-${col}-s)`, n=>paintCells(n,col,true)); b.dataset.k=col+':1'; strong.appendChild(b);
+  });
+  $('#cb-h').onclick=apply(n=>selCells(n).forEach(x=>delete x.v));
+  $('#cb-v').onclick=apply(n=>selCells(n).forEach(x=>{ x.v=true; }));
+  $('#cb-more').onclick=()=>{ setInspMin(false); $('#inspbody').scrollIntoView?.({block:'start'}); $('#insp').scrollTop=0; };
+})();
+function updateCellBar(){
+  const bar=$('#cellbar'), n=cellSel && nodeById(cellSel.node);
+  const tds = n && !cellEdit && !drag ? [...(nodeEls.get(n.id)?.querySelectorAll('td.csel')||[])] : [];
+  if(!tds.length){ bar.hidden=true; return; }
+  const {r,c,mode}=cellSel, cells=selCells(n);
+  $('#cb-lbl').textContent = mode==='row' ? `Linha ${r+1}` : mode==='col' ? `Coluna ${c+1}` : `Célula · linha ${r+1}, coluna ${c+1}`;
+  bar.querySelectorAll('.sw').forEach(b=>{
+    const k=b.dataset.k;
+    const on = k==='none' ? cells.every(x=>!x.c) : cells.every(x=>`${x.c}:${x.solid?1:0}`===k);
+    b.setAttribute('aria-pressed', on); });
+  $('#cb-h').setAttribute('aria-pressed', cells.every(x=>!x.v));
+  $('#cb-v').setAttribute('aria-pressed', cells.every(x=>x.v));
+  // fica acima da seleção, longe das barrinhas de coluna; sem espaço, vai para baixo
+  const u=tds.map(td=>td.getBoundingClientRect()).reduce((a,b)=>({left:Math.min(a.left,b.left), top:Math.min(a.top,b.top),
+    right:Math.max(a.right,b.right), bottom:Math.max(a.bottom,b.bottom)}));
+  const app=$('#app').getBoundingClientRect();
+  bar.hidden=false;
+  const bw=bar.offsetWidth, bh=bar.offsetHeight;
+  let top=u.top-app.top-bh-30;
+  if(top<70) top=u.bottom-app.top+14;
+  const left=clamp((u.left+u.right)/2-app.left-bw/2, 12, app.width-bw-12);
+  bar.style.left=left+'px'; bar.style.top=clamp(top,12,app.height-bh-12)+'px';
+}
 function paintCells(n, color, solid){
   selCells(n).forEach(cell=>{ if(color){ cell.c=color; if(solid) cell.solid=true; else delete cell.solid; } else { delete cell.c; delete cell.solid; } });
 }
@@ -851,6 +911,7 @@ function startCellEdit(id,r,c){
   const rg=document.createRange(); rg.selectNodeContents(ct);
   const s=window.getSelection(); s.removeAllRanges(); s.addRange(rg);
   ct.onblur=()=>finishCellEdit();
+  updateCellBar();
 }
 function finishCellEdit(){
   const ce=cellEdit; if(!ce) return;
@@ -932,7 +993,7 @@ function render(){
   state.nodes.forEach(n=>{ const el=nodeEls.get(n.id); if(!el) return;
     if(n.shape==='lane') world.insertBefore(el, wires); else world.appendChild(el); });
   world.appendChild(ghost);
-  renderEdges(); renderInspector(); updateStatus();
+  renderEdges(); renderInspector(); updateStatus(); updateCellBar();
 }
 const edgeEls=new Map(), labelEls=new Map();
 function renderEdges(){
@@ -1141,7 +1202,7 @@ stage.addEventListener('pointerdown', e=>{
     // primeiro clique seleciona a tabela, o seguinte seleciona a célula
     const onlyThis = sel.nodes.size===1 && sel.nodes.has(id);
     // sem render() aqui: reanexar o nó no DOM cancela o click e o clique duplo
-    if(td && onlyThis && !e.shiftKey){ cellSel={node:id, r:+td.dataset.r, c:+td.dataset.c, mode:'cell'}; syncNode(nodeById(id)); renderInspector(); }
+    if(td && onlyThis && !e.shiftKey){ cellSel={node:id, r:+td.dataset.r, c:+td.dataset.c, mode:'cell'}; syncNode(nodeById(id)); renderInspector(); updateCellBar(); }
     if(!sel.nodes.has(id)) selectNode(id, e.shiftKey);
     else if(e.shiftKey){ sel.nodes.delete(id); render(); return; }
     const ids=new Set(sel.nodes);
@@ -1174,6 +1235,7 @@ stage.addEventListener('pointermove', e=>{
     const dx=w.x-drag.sx, dy=w.y-drag.sy;
     if(Math.abs(dx)>1||Math.abs(dy)>1) drag.moved=true;
     drag.moving.forEach(m=>{ const n=nodeById(m.id); if(!n) return; n.x=g(m.ox+dx); n.y=g(m.oy+dy); syncNode(n); });
+    if(drag.moved) $('#cellbar').hidden=true;
     renderEdges();
   }
   else if(drag.type==='resize'){
@@ -1524,9 +1586,11 @@ function inspTable(box,n){
     ca.appendChild(chipToggle(l, t.al.every(a=>a===v), ()=>{ t.al=t.al.map(()=>v); commit(); })));
   fa.appendChild(ca); box.appendChild(fa);
   box.appendChild(opts('Espaçamento','pad',[['compact','Compacto'],['normal','Normal'],['wide','Amplo']]));
-  box.appendChild(colorField(n,false));
+  box.appendChild(colorField(n,false,'Cor da tabela (cabeçalho e bordas)'));
   box.appendChild(textField(n));
 
+  // a parte da célula, linha ou coluna é montada aqui e depois sobe para o topo do painel
+  const mark=box.children.length;
   if(cellSel && cellSel.node===n.id){
     const {r,c,mode}=cellSel, cell=t.cells[r][c], cells=selCells(n);
     box.append(h3(mode==='row' ? `Linha ${r+1}` : mode==='col' ? `Coluna ${c+1}` : `Célula · linha ${r+1}, coluna ${c+1}`));
@@ -1602,9 +1666,10 @@ function inspTable(box,n){
     fr.appendChild(cr); box.appendChild(fr);
   } else {
     const p=document.createElement('div'); p.id='empty';
-    p.innerHTML='Clique numa célula para editá-la. As <b>barrinhas</b> acima das colunas e à esquerda das linhas selecionam a coluna ou a linha inteira. Arraste as divisas para mudar largura e altura.';
+    p.innerHTML='<b>Para mudar a cor de uma coluna ou linha</b>, clique na barrinha acima da coluna ou à esquerda da linha. Uma barra com as cores aparece logo acima. Para uma célula só, clique nela com a tabela já selecionada.<br>Clique duplo edita a célula. Arraste as divisas para mudar largura e altura.';
     box.appendChild(p);
   }
+  box.prepend(...[...box.children].slice(mark));
 
   const acts=div('chips');
   acts.append(
@@ -1644,8 +1709,8 @@ function stepField(label, val, dec, inc){
   const p=document.createElement('button'); p.textContent='+'; p.setAttribute('aria-label','Adicionar'); p.onclick=inc;
   s.append(m,v,p); f.appendChild(s); return f;
 }
-function colorField(n, multi){
-  const fc=field('Cor'); const sws=div('chips');
+function colorField(n, multi, label){
+  const fc=field(label||'Cor'); const sws=div('chips');
   COLORS.forEach(c=>{
     const b=document.createElement('button'); b.className='sw'; b.title=c;
     b.style.background=`var(--c-${c}-f)`; b.style.borderColor=`var(--c-${c}-s)`;
@@ -1866,7 +1931,7 @@ async function copyPNG(){
       const ad=a.getAttribute('d'); if(ad) ctx.fill(new Path2D(ad));
       ctx.restore();
       if(e.label){ const lb=labelEls.get(e.id); const mx=parseFloat(lb.style.left), my=parseFloat(lb.style.top);
-        ctx.font='12px "IBM Plex Sans", sans-serif'; const tw=ctx.measureText(e.label).width+12;
+        ctx.font=`12px ${bodyFont()}`; const tw=ctx.measureText(e.label).width+12;
         ctx.fillStyle=v('--surface'); ctx.strokeStyle=v('--line'); ctx.lineWidth=1;
         ctx.beginPath(); ctx.roundRect(mx-tw/2,my-10,tw,20,5); ctx.fill(); ctx.stroke();
         ctx.fillStyle=v('--ink'); ctx.textAlign='center'; ctx.textBaseline='middle'; ctx.fillText(e.label,mx,my); }
@@ -1903,7 +1968,7 @@ function drawNode(ctx,n,v){
   }
   if(n.shape!=='image' && n.text){
     const fs=n.fs||14;
-    ctx.font=`${n.bold?600:400} ${fs}px "IBM Plex Sans", sans-serif`; ctx.textBaseline='middle';
+    ctx.font=`${n.bold?600:400} ${fs}px ${bodyFont()}`; ctx.textBaseline='middle';
     ctx.fillStyle = (solid || n.shape==='lane') ? c('f') : c('i');
     const lh=fs*1.35;
     if(n.shape==='lane'){
@@ -1952,7 +2017,7 @@ function drawTable(ctx,n,v){
       if(br>0 && cs.borderRightStyle!=='none'){ ctx.fillStyle=cs.borderRightColor; ctx.fillRect(x+w-br,y,br,h); }
       if(bb>0 && cs.borderBottomStyle!=='none'){ ctx.fillStyle=cs.borderBottomColor; ctx.fillRect(x,y+h-bb,w,bb); }
       const fsz=parseFloat(cs.fontSize), pl=parseFloat(cs.paddingLeft), pr=parseFloat(cs.paddingRight);
-      ctx.font=`${cs.fontWeight} ${fsz}px "IBM Plex Sans", sans-serif`;
+      ctx.font=`${cs.fontWeight} ${fsz}px ${bodyFont()}`;
       ctx.fillStyle=cs.color; ctx.textBaseline='middle';
       const ct=td.querySelector('.ct'), raw=(ct?ct.innerText:td.innerText).replace(/​/g,'');
       if(td.classList.contains('vt')){   // texto em pé, lido de baixo para cima

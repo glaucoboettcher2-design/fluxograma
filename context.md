@@ -5,6 +5,7 @@ Editor de fluxogramas e mapas mentais em HTML puro, feito para substituir Whimsi
 ## Decisões já tomadas
 
 - **Um arquivo só.** HTML, CSS e JS no mesmo `index.html`. Nenhuma lib, nenhum bundler, nenhuma chamada de rede além da fonte do Google Fonts (Archivo, IBM Plex Sans, IBM Plex Mono).
+- **Fonte padrão: Bahnschrift** (do Windows) na interface e nos nós, com Archivo e IBM Plex Sans de reserva em outros sistemas. O PNG usa a mesma pilha via `bodyFont()`.
 - **JS em IIFE**, modo estrito, sem framework. Manipulação direta de DOM.
 - **Render híbrido**: nós são `<div>` posicionados em coordenadas de mundo; conexões são `<path>` dentro de um `<svg>` no mesmo container transformado. Isso permite texto editável nativo (`contenteditable`) dentro dos nós.
 - **Canvas infinito** via `transform: translate(x,y) scale(k)` no `#world`, com `transform-origin: 0 0`. O fundo pontilhado do `#stage` acompanha pan e zoom pelo `background-position` / `background-size`.
@@ -62,6 +63,8 @@ Nó com `shape:'table'`, criado pela ferramenta da barra ou pela tecla `T`. O HT
 Seleção de célula fica em `cellSel = {node, r, c, mode}`, fora do `state`, com `mode` `cell | row | col`. As barrinhas acima das colunas e à esquerda das linhas (`.tsel`) selecionam a coluna ou linha inteira; as divisas (`.colh`, `.rowh`) mudam largura e altura. Linha e coluna pegam só as células que começam nelas, então uma mescla que atravessa não muda de cor junto. `coverMap` resolve as mesclas; `spanShift` as ajusta ao inserir ou excluir linhas e colunas. O primeiro clique seleciona a tabela e o segundo seleciona a célula. Com uma célula selecionada, as setas andam entre células, `Del` limpa a célula e `Esc` volta para a tabela. Editando uma célula, `Tab` vai para a próxima (na última, cria uma linha) e `Shift+Enter` quebra a linha. As colunas são redimensionadas arrastando a divisa entre elas.
 
 O inspetor da tabela tem quantidade de linhas e colunas, cabeçalho no topo e na lateral, estilo do cabeçalho, linhas de grade, linhas alternadas, alinhamento, espaçamento, cor e texto. Com uma célula selecionada, também pinta a célula, a linha ou a coluna, alinha a coluna, insere e exclui linhas e colunas. Para o Mermaid, a tabela vira um nó de processo com as linhas separadas por `|`.
+
+Com uma célula, linha ou coluna selecionada, aparece a barra flutuante `#cellbar` logo acima da seleção, com cores suaves, cores fortes e direção do texto. Ela é montada uma vez (`initCellBar`) e só reposicionada em `updateCellBar`, chamada no `render` e no `applyView`. No inspetor da tabela, a parte da seleção sobe para o topo.
 
 O painel lateral (`#insp`) é recolhível pelo botão do canto ou pela tecla `P`, e o estado fica em `prancheta.insp`. O conteúdo é montado em `#inspbody`.
 
