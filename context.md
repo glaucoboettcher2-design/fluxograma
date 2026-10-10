@@ -22,8 +22,11 @@ state = {
 view = { x, y, k }   // pan e zoom
 ```
 
-- `shape`: `process | round | terminal | decision | data | circle | note | table`
-- `tbl` (só em `shape:'table'`): `{ cells:[[{t, c?}]], colW:[pesos], al:['left'|'center'|'right' por coluna], hRow, hCol, head:'strong'|'soft'|'plain', lines:'grid'|'rows'|'cols'|'outer'|'none', zebra, pad:'compact'|'normal'|'wide' }`. `c` é a cor de fundo da célula (uma das 8 famílias).
+- `shape`: `process | round | terminal | decision | data | circle | note | sticky | tag | star | text | image | lane | table`
+- Estilo do nó: `fill:'solid'` (fundo `-i`, texto `-f`), `bw` espessura da borda (0 a 4, padrão 1.5), `al` alinhamento do texto. `SHAPE_DEFAULTS` define tamanho e estilo com que cada formato nasce.
+- `image`: `img` (dataURL reduzido a 1400 px), `fit:'cover'|'contain'`. Nasce pela ferramenta da barra (`I`) ou colando com Ctrl+V.
+- `lane` (raia): faixa de fundo com título em pé numa barra de 56 px. Fica atrás das conexões, só é clicável pela barra e, ao ser arrastada, leva junto os nós que estão inteiros dentro dela.
+- `tbl` (só em `shape:'table'`): `{ cells:[[{t, c?, solid?, v?, rs?, cs?}]], colW:[pesos], rowH:[px|null], al:['left'|'center'|'right' por coluna], hRow, hCol, head:'strong'|'soft'|'plain', lines:'grid'|'rows'|'cols'|'outer'|'none', zebra, pad:'compact'|'normal'|'wide' }`. Na célula, `c` é a cor de fundo (uma das 8 famílias), `solid` usa o tom forte, `v` põe o texto em pé (90°), `rs`/`cs` são as mesclas (rowspan/colspan).
 - `side`: `auto | t | r | b | l` (auto escolhe o lado pelo vetor entre os centros)
 - `style`: `solid | dashed | dotted`
 - `curve`: `ortho | curved | straight`
@@ -56,9 +59,11 @@ Clique duplo é detectado dentro do `pointerdown` (`isDoubleDown` / `onDouble`),
 
 Nó com `shape:'table'`, criado pela ferramenta da barra ou pela tecla `T`. O HTML é um `<table>` dentro de `.tblwrap`; o contorno arredondado continua sendo o `.nshape`, desenhado por cima. Funções: `newTable`, `normTable`, `buildTable`, `syncTable` (reconstrói só quando a assinatura JSON muda), `fitTable` (a altura nunca fica menor que o conteúdo, chamada em todo `render`), `tblOp` (inserir e excluir linha e coluna), `startCellEdit` / `finishCellEdit` / `moveCell`, `paintCells`, `inspTable`, `drawTable` (PNG, lendo geometria e cores calculadas pelo navegador).
 
-Seleção de célula fica em `cellSel = {node, r, c}`, fora do `state`. O primeiro clique seleciona a tabela e o segundo seleciona a célula. Com uma célula selecionada, as setas andam entre células, `Del` limpa a célula e `Esc` volta para a tabela. Editando uma célula, `Tab` vai para a próxima (na última, cria uma linha) e `Shift+Enter` quebra a linha. As colunas são redimensionadas arrastando a divisa entre elas.
+Seleção de célula fica em `cellSel = {node, r, c, mode}`, fora do `state`, com `mode` `cell | row | col`. As barrinhas acima das colunas e à esquerda das linhas (`.tsel`) selecionam a coluna ou linha inteira; as divisas (`.colh`, `.rowh`) mudam largura e altura. Linha e coluna pegam só as células que começam nelas, então uma mescla que atravessa não muda de cor junto. `coverMap` resolve as mesclas; `spanShift` as ajusta ao inserir ou excluir linhas e colunas. O primeiro clique seleciona a tabela e o segundo seleciona a célula. Com uma célula selecionada, as setas andam entre células, `Del` limpa a célula e `Esc` volta para a tabela. Editando uma célula, `Tab` vai para a próxima (na última, cria uma linha) e `Shift+Enter` quebra a linha. As colunas são redimensionadas arrastando a divisa entre elas.
 
 O inspetor da tabela tem quantidade de linhas e colunas, cabeçalho no topo e na lateral, estilo do cabeçalho, linhas de grade, linhas alternadas, alinhamento, espaçamento, cor e texto. Com uma célula selecionada, também pinta a célula, a linha ou a coluna, alinha a coluna, insere e exclui linhas e colunas. Para o Mermaid, a tabela vira um nó de processo com as linhas separadas por `|`.
+
+O painel lateral (`#insp`) é recolhível pelo botão do canto ou pela tecla `P`, e o estado fica em `prancheta.insp`. O conteúdo é montado em `#inspbody`.
 
 `#insp` segura a reconstrução (`inspHold`) enquanto um botão dele está sendo clicado. Sem isso, o blur de uma edição em curso redesenharia o painel e o clique se perderia.
 
