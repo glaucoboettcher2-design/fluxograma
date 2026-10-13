@@ -9,7 +9,7 @@ Editor de fluxogramas e mapas mentais em HTML puro, feito para substituir Whimsi
 - **JS em IIFE**, modo estrito, sem framework. Manipulação direta de DOM.
 - **Render híbrido**: nós são `<div>` posicionados em coordenadas de mundo; conexões são `<path>` dentro de um `<svg>` no mesmo container transformado. Isso permite texto editável nativo (`contenteditable`) dentro dos nós.
 - **Canvas infinito** via `transform: translate(x,y) scale(k)` no `#world`, com `transform-origin: 0 0`. O fundo pontilhado do `#stage` acompanha pan e zoom pelo `background-position` / `background-size`.
-- **Tema claro e escuro** por tokens CSS em `:root`, redefinidos em `@media (prefers-color-scheme: dark)` e em `:root[data-theme="dark"]`. Nenhuma cor literal fora dos tokens. A paleta dos nós tem 16 famílias (`slate, gray, blue, indigo, cyan, teal, green, lime, yellow, amber, orange, brown, red, rose, magenta, violet`), com nomes em português em `COLOR_NAMES`, cada uma com três tokens: preenchimento `--c-<cor>-f`, traço `--c-<cor>-s`, texto `--c-<cor>-i`.
+- **Tema claro e escuro** por tokens CSS em `:root`, redefinidos em `@media (prefers-color-scheme: dark)` e em `:root[data-theme="dark"]`. Nenhuma cor literal fora dos tokens. A paleta dos nós tem 17 famílias (`slate, ink, gray, blue, indigo, cyan, teal, green, lime, yellow, amber, orange, brown, red, rose, magenta, violet`), com nomes em português em `COLOR_NAMES`, cada uma com três tokens: preenchimento `--c-<cor>-f`, traço `--c-<cor>-s`, texto `--c-<cor>-i`.
 - **Vários quadros** em `localStorage`, sempre dentro de `try/catch`: o índice fica em `prancheta.index` (`[{id,title,updated}]`) e cada quadro em `prancheta.q.<id>` (`{state,view}`). O quadro aberto vem do endereço (`#q=<id>`), então cada aba do navegador edita um quadro. Se o mesmo quadro estiver em duas abas, o evento `storage` faz a outra adotar a versão nova (`applyRemote`), esperando terminar edição ou arraste. A chave antiga `prancheta.v1` é migrada uma vez (`migrateOld`). Tema em `prancheta.theme`, painel em `prancheta.insp`. O armazenamento é por endereço: os quadros do arquivo local e os do site na Vercel são separados; para levar de um para o outro, use Baixar e Abrir arquivo .json na tela Quadros.
 
 ## Modelo de dados
@@ -24,11 +24,12 @@ view = { x, y, k }   // pan e zoom
 ```
 
 - `shape`: `process | round | terminal | decision | data | circle | note | sticky | tag | star | text | image | lane | table`
-- Estilo do nó: `fill:'solid'` (fundo `-i`, texto `-f`), `bw` espessura da borda (0 a 4, padrão 1.5), `al` alinhamento do texto. `SHAPE_DEFAULTS` define tamanho e estilo com que cada formato nasce.
-- `image`: `img` (dataURL reduzido a 1400 px), `fit:'cover'|'contain'`. Nasce pela ferramenta da barra (`I`) ou colando com Ctrl+V.
-- `lane` (raia): faixa de fundo com título em pé numa barra de 56 px. Fica atrás das conexões, só é clicável pela barra e, ao ser arrastada, leva junto os nós que estão inteiros dentro dela.
-- `tbl` (só em `shape:'table'`): `{ cells:[[{t, c?, solid?, v?, rs?, cs?}]], colW:[pesos], rowH:[px|null], al:['left'|'center'|'right' por coluna], hRow, hCol, head:'strong'|'soft'|'plain', lines:'grid'|'rows'|'cols'|'outer'|'none', zebra, pad:'compact'|'normal'|'wide' }`. Na célula, `c` é a cor de fundo (uma das 16 famílias), `solid` usa o tom forte, `v` põe o texto em pé (90°), `rs`/`cs` são as mesclas (rowspan/colspan).
-- `side`: `auto | t | r | b | l` (auto escolhe o lado pelo vetor entre os centros)
+- Estilo do nó: `fill:'solid'` (fundo `-i`, texto `-f`) ou `fill:'mid'` (fundo `-s`, texto `--n-on`: branco, ou `-i` nas famílias claras), `bw` espessura da borda (0 a 4, padrão 1.5), `sc` cor da borda independente do fundo, `al` alinhamento do texto. `SHAPE_DEFAULTS` define tamanho e estilo com que cada formato nasce. O espaçamento interno do texto é em `em`, então acompanha o tamanho da fonte.
+- `image`: `img` (dataURL reduzido a 1400 px), `fit:'cover'|'contain'`, e `text` como descrição, que aparece no lugar quando não há arquivo. Nasce pela ferramenta da barra (`I`) ou colando com Ctrl+V.
+- `lane` (raia): faixa de fundo com título em pé numa barra lateral (`barW`, padrão 56 px; `bar: strong | mid | none`). Raias sem barra servem de subdivisão dentro de uma raia maior. Fica atrás das conexões, só é clicável pela barra e, ao ser arrastada, leva junto os nós que estão inteiros dentro dela.
+- `tbl` (só em `shape:'table'`): `{ cells:[[{t, c?, solid?, v?, rs?, cs?}]], colW:[pesos], rowH:[px|null], al:['left'|'center'|'right' por coluna], hRow, hCol, head:'strong'|'soft'|'plain', lines:'grid'|'rows'|'cols'|'outer'|'none', zebra, pad:'compact'|'normal'|'wide' }`. Na célula, `c` é a cor de fundo (uma das 17 famílias), `solid` usa o tom forte, `v` põe o texto em pé (90°), `rs`/`cs` são as mesclas (rowspan/colspan).
+- `side`: `auto | t | r | b | l` (auto escolhe o lado pelo vetor entre os centros); `t` opcional = posição ao longo do lado (0 a 1, padrão 0.5)
+- `pts`: rota manual da conexão, lista de pontos de dobra `[[x,y],...]`. `orthoFix` mantém os trechos retos mesmo se um nó se mover; o inspetor tem "Rota automática" para descartar a rota.
 - `style`: `solid | dashed | dotted`
 - `curve`: `ortho | curved | straight`
 - `arrow`: `none | end | both`
@@ -102,3 +103,7 @@ Dentro do visualizador do Claude.ai, download de arquivo e `window.print()` não
 ## Preferências de trabalho
 
 Respostas e textos em português do Brasil, diretos, sem floreio. Nos textos de interface: nada de travessão, nada de estrutura "não é X, é Y", nada de listas de três itens como padrão decorativo. Comentários de código em português e só onde a intenção não é óbvia pelo nome da função.
+
+## Mapa de Operações (PDF do treinamento)
+
+`quadros/mapa-de-operacoes-mkt-vendas.json` é a reprodução da página 1 do PDF "[Bônus Treinamento CRM] [Modelo] Mapa de Operações", sem o título grande e com a foto trocada por uma imagem com descrição. Foi gerado extraindo a geometria vetorial do PDF com pdf.js (escala 1 pt = 10 px). A pasta `quadros/` fica fora do Git por ser material do treinamento. Abre pela tela Quadros → Abrir arquivo .json.
