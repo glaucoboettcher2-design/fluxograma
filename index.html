@@ -270,6 +270,17 @@ kbd{font-family:var(--font-mono);font-size:10.5px;background:var(--surface-3);bo
 }
 
 /* ---------- Tabela ---------- */
+/* lista de quadros */
+.blist{display:flex;flex-direction:column;gap:6px;margin:4px 0 14px}
+.brow{display:flex;align-items:center;gap:10px;padding:8px 10px;border:1px solid var(--line);border-radius:10px;background:var(--surface-2)}
+.brow.cur{border-color:var(--accent);box-shadow:inset 3px 0 0 var(--accent)}
+.brow .bt{flex:1;min-width:0;cursor:pointer}
+.brow .bt b{display:block;font-family:var(--font-ui);font-size:13.5px;font-weight:600;color:var(--ink);white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
+.brow .bt span{font-size:11.5px;color:var(--ink-3)}
+.brow .chips{flex-wrap:nowrap}
+.btag{font-family:var(--font-ui);font-size:11px;font-weight:600;color:var(--accent);padding:0 4px}
+@media (max-width:560px){ .brow{flex-wrap:wrap} .brow .chips{flex-wrap:wrap} }
+
 /* barra flutuante de cor e direção do texto da célula, linha ou coluna selecionada */
 #cellbar{z-index:30;padding:9px 10px;display:flex;flex-direction:column;gap:7px}
 #cellbar[hidden]{display:none}
@@ -370,6 +381,7 @@ kbd{font-family:var(--font-mono);font-size:10.5px;background:var(--surface-3);bo
     <span class="spacer"></span>
     <div class="group">
       <button class="btn" id="btn-snap" aria-pressed="true" title="Alinhar à grade">Grade</button>
+      <button class="btn" id="btn-boards" title="Seus quadros"><svg viewBox="0 0 24 24"><rect x="3.5" y="3.5" width="7" height="7" rx="1.5"/><rect x="13.5" y="3.5" width="7" height="7" rx="1.5"/><rect x="3.5" y="13.5" width="7" height="7" rx="1.5"/><rect x="13.5" y="13.5" width="7" height="7" rx="1.5"/></svg>Quadros</button>
       <button class="btn" id="btn-export">Exportar</button>
       <button class="btn" id="btn-import">Importar</button>
       <button class="btn icon" id="btn-theme" title="Alternar tema"><svg viewBox="0 0 24 24"><path d="M20 14.5A8.5 8.5 0 019.5 4a8.5 8.5 0 1010.5 10.5z"/></svg></button>
@@ -382,6 +394,7 @@ kbd{font-family:var(--font-mono);font-size:10.5px;background:var(--surface-3);bo
     <div id="inspbody"></div>
   </div>
   <input type="file" id="imgpick" accept="image/*" hidden>
+  <input type="file" id="jsonpick" accept=".json,application/json" hidden>
   <div class="bar" id="cellbar" hidden>
     <span class="cb-lbl" id="cb-lbl"></span>
     <div class="cb-row"><span class="lbl">Suave</span><div class="chips" id="cb-soft"></div></div>
@@ -465,26 +478,69 @@ const nodeById = id => state.nodes.find(n=>n.id===id);
 const edgeById = id => state.edges.find(e=>e.id===id);
 
 /* ---------------- persistência ---------------- */
-const KEY='prancheta.v1';
-let saveWarned=false;
-function save(){
-  try{ localStorage.setItem(KEY, JSON.stringify({state,view})); saveWarned=false; }
+/* vários quadros: um índice com {id,title,updated} e cada quadro numa chave própria.
+   O quadro aberto vem do endereço (#q=<id>), então cada aba pode editar um quadro diferente. */
+const OLD_KEY='prancheta.v1', INDEX_KEY='prancheta.index', boardKey=id=>'prancheta.q.'+id;
+let boardId=null, saveWarned=false;
+function lsGet(k){ try{ return localStorage.getItem(k); }catch(e){ return null; } }
+function lsSet(k,v){
+  try{ localStorage.setItem(k,v); saveWarned=false; return true; }
   catch(e){ if(!saveWarned && e && e.name==='QuotaExceededError'){ saveWarned=true;
-    toast('O navegador ficou sem espaço para salvar. Exporte o JSON ou use imagens menores.'); } }
+    toast('O navegador ficou sem espaço para salvar. Baixe os quadros em arquivo ou use imagens menores.'); } return false; }
 }
-function load(){
-  try{ const raw=localStorage.getItem(KEY); if(!raw) return false;
-    const d=JSON.parse(raw);
-    if(d && d.state && Array.isArray(d.state.nodes)){ state=d.state; if(d.view) view=d.view; return true; }
-  }catch(e){}
-  return false;
+function readIndex(){ try{ const a=JSON.parse(lsGet(INDEX_KEY)||'[]'); return Array.isArray(a)?a:[]; }catch(e){ return []; } }
+function writeIndex(a){ lsSet(INDEX_KEY, JSON.stringify(a)); }
+function readBoard(id){
+  try{ const d=JSON.parse(lsGet(boardKey(id))||'null'); if(d && d.state && Array.isArray(d.state.nodes)) return d; }catch(e){}
+  return null;
+}
+function touchIndex(){
+  if(!boardId) return;
+  const idx=readIndex(), it=idx.find(b=>b.id===boardId), meta={id:boardId, title:state.title||'Sem título', updated:Date.now()};
+  if(it) Object.assign(it, meta); else idx.unshift(meta);
+  writeIndex(idx);
+}
+function save(){ if(boardId) lsSet(boardKey(boardId), JSON.stringify({state,view})); }
+/* cria um quadro e devolve o id; data = {state,view} */
+function createBoard(data){
+  const id=uid('q');
+  lsSet(boardKey(id), JSON.stringify(data));
+  const idx=readIndex(); idx.unshift({id, title:data.state.title||'Sem título', updated:Date.now()}); writeIndex(idx);
+  return id;
+}
+/* migra o quadro único da versão anterior para a lista */
+function migrateOld(){
+  if(readIndex().length) return;
+  try{ const d=JSON.parse(lsGet(OLD_KEY)||'null'); if(d && d.state && Array.isArray(d.state.nodes)) createBoard(d); }catch(e){}
+}
+const hashId = ()=>{ const m=location.hash.match(/q=([\w-]+)/); return m ? m[1] : null; };
+function setHash(id){ history.replaceState(null,'', location.pathname+location.search+'#q='+id); }
+function resetBoardDOM(){
+  nodeEls.forEach(el=>el.remove()); nodeEls.clear();
+  edgeEls.forEach(el=>el.remove()); edgeEls.clear();
+  labelEls.forEach(el=>el.remove()); labelEls.clear();
+}
+function openBoard(id){
+  const d=readBoard(id); if(!d) return false;
+  if(editing) finishEdit(editing);
+  if(cellEdit) finishCellEdit();
+  boardId=id; state=d.state; view=d.view||{x:40,y:90,k:1};
+  sel={nodes:new Set(),edges:new Set()}; cellSel=null; drag=null;
+  resetBoardDOM();
+  $('#title').value=state.title||'Sem título'; document.title=(state.title||'Sem título')+' · Prancheta';
+  hist=[JSON.stringify(state)]; hi=0; updateHistBtns();
+  setHash(id); applyView(); render();
+  return true;
+}
+function newBlankBoard(){
+  return createBoard({state:{title:'Novo quadro', nodes:[], edges:[]}, view:{x:60,y:110,k:1}});
 }
 function snapshot(){
   const s=JSON.stringify(state);
   if(hist[hi]===s) return;
   hist = hist.slice(0,hi+1); hist.push(s);
   if(hist.length>80) hist.shift();
-  hi = hist.length-1; save(); updateHistBtns();
+  hi = hist.length-1; save(); touchIndex(); updateHistBtns();
 }
 function undo(){ if(hi<=0) return; hi--; state=JSON.parse(hist[hi]); sel={nodes:new Set(),edges:new Set()}; render(); save(); updateHistBtns(); }
 function redo(){ if(hi>=hist.length-1) return; hi++; state=JSON.parse(hist[hi]); sel={nodes:new Set(),edges:new Set()}; render(); save(); updateHistBtns(); }
@@ -1833,7 +1889,7 @@ function setTool(t){
 document.querySelectorAll('[data-tool]').forEach(b=>b.onclick=()=>setTool(b.dataset.tool));
 $('#undo').onclick=undo; $('#redo').onclick=redo;
 $('#btn-snap').onclick=e=>{ snap=!snap; e.currentTarget.setAttribute('aria-pressed',snap); };
-$('#title').oninput=e=>{ state.title=e.target.value; save(); };
+$('#title').oninput=e=>{ state.title=e.target.value; document.title=(state.title||'Sem título')+' · Prancheta'; save(); touchIndex(); };
 $('#btn-theme').onclick=()=>{
   const cur=document.documentElement.getAttribute('data-theme');
   const dark = cur ? cur==='dark' : matchMedia('(prefers-color-scheme: dark)').matches;
@@ -1845,11 +1901,89 @@ function toast(msg){ const t=$('#toast'); t.textContent=msg; t.classList.add('sh
 /* ---------------- exportar / importar ---------------- */
 function openSheet(html){ $('#sheetbox').innerHTML=html; $('#sheet').classList.add('open'); }
 $('#sheet').onclick=e=>{ if(e.target.id==='sheet') $('#sheet').classList.remove('open'); };
+const closeSheet=()=>$('#sheet').classList.remove('open');
+
+/* ---------------- quadros ---------------- */
+function download(name, text, type){
+  const a=document.createElement('a');
+  a.href=URL.createObjectURL(new Blob([text],{type:type||'application/json'}));
+  a.download=name; document.body.appendChild(a); a.click(); a.remove();
+  setTimeout(()=>URL.revokeObjectURL(a.href), 2000);
+}
+const fileName = t=>(t||'quadro').normalize('NFD').replace(/[̀-ͯ]/g,'').replace(/[^\w-]+/g,'-').replace(/^-+|-+$/g,'').toLowerCase()||'quadro';
+function when(ts){
+  if(!ts) return '';
+  const d=new Date(ts), now=new Date(), same=d.toDateString()===now.toDateString();
+  const hm=d.toLocaleTimeString('pt-BR',{hour:'2-digit',minute:'2-digit'});
+  return same ? 'Hoje às '+hm : d.toLocaleDateString('pt-BR',{day:'2-digit',month:'short'})+' às '+hm;
+}
+function boardUrl(id){ return location.pathname+location.search+'#q='+id; }
+function renderBoardList(){
+  const box=$('#blist'); if(!box) return;
+  const idx=readIndex().sort((a,b)=>b.updated-a.updated);
+  box.innerHTML='';
+  if(!idx.length){ box.innerHTML='<p>Nenhum quadro salvo neste navegador.</p>'; return; }
+  idx.forEach(b=>{
+    const row=div('brow'+(b.id===boardId?' cur':''));
+    const bt=div('bt'); const tt=document.createElement('b'); tt.textContent=b.title||'Sem título';
+    const sp=document.createElement('span'); sp.textContent=when(b.updated); bt.append(tt,sp);
+    bt.onclick=()=>{ if(b.id!==boardId) openBoard(b.id); closeSheet(); };
+    const acts=div('chips');
+    if(b.id===boardId){ const tag=document.createElement('span'); tag.className='btag'; tag.textContent='Aberto aqui'; acts.append(tag); }
+    else acts.append(chipBtn('Abrir', ()=>{ openBoard(b.id); closeSheet(); }));
+    acts.append(
+      chipBtn('Nova aba', ()=>window.open(boardUrl(b.id),'_blank')),
+      chipBtn('Duplicar', ()=>{ const d=b.id===boardId?{state,view}:readBoard(b.id); if(!d) return;
+        const c=JSON.parse(JSON.stringify(d)); c.state.title=(c.state.title||'Sem título')+' (cópia)';
+        createBoard(c); renderBoardList(); toast('Cópia criada'); }),
+      chipBtn('Baixar', ()=>{ const d=b.id===boardId?{state}:readBoard(b.id); if(d) download(fileName(d.state.title)+'.json', JSON.stringify(d.state,null,2)); }));
+    const del=chipBtn('Excluir', ()=>{
+      if(!del.dataset.armed){ del.dataset.armed='1'; del.textContent='Confirmar?'; del.style.color='var(--accent)';
+        setTimeout(()=>{ if(del.isConnected){ delete del.dataset.armed; del.textContent='Excluir'; del.style.color=''; } },2600); return; }
+      try{ localStorage.removeItem(boardKey(b.id)); }catch(e){}
+      writeIndex(readIndex().filter(x=>x.id!==b.id));
+      if(b.id===boardId){ const rest=readIndex().sort((a,c)=>c.updated-a.updated); openBoard(rest.length?rest[0].id:newBlankBoard()); }
+      renderBoardList(); toast('Quadro excluído');
+    });
+    acts.append(del);
+    row.append(bt,acts); box.appendChild(row);
+  });
+}
+$('#btn-boards').onclick=()=>{
+  openSheet(`<h2>Quadros</h2>
+    <p>Cada quadro fica salvo neste navegador. Use <b>Nova aba</b> para editar dois ao mesmo tempo; o endereço de cada aba aponta para o seu quadro. Se o mesmo quadro estiver aberto em duas abas, elas se atualizam juntas.</p>
+    <div class="chips" style="margin-bottom:12px">
+      <button class="chip" id="b-new">Novo quadro</button>
+      <button class="chip" id="b-newtab">Novo em outra aba</button>
+      <button class="chip" id="b-file">Abrir arquivo .json</button>
+      <button class="chip" id="b-close">Fechar</button>
+    </div>
+    <div class="blist" id="blist"></div>`);
+  renderBoardList();
+  $('#b-new').onclick=()=>{ openBoard(newBlankBoard()); closeSheet(); toast('Quadro novo criado'); };
+  $('#b-newtab').onclick=()=>{ const id=newBlankBoard(); renderBoardList(); window.open(boardUrl(id),'_blank'); };
+  $('#b-file').onclick=()=>{ const p=$('#jsonpick'); p.value=''; p.click(); };
+  $('#b-close').onclick=closeSheet;
+};
+/* aceita tanto o formato salvo ({title,nodes,edges}) quanto {state,view} */
+function boardFromJSON(d){
+  const st = d && d.state && Array.isArray(d.state.nodes) ? d.state : d;
+  if(!st || !Array.isArray(st.nodes)) return null;
+  return {state:{title:st.title||'Quadro importado', nodes:st.nodes, edges:st.edges||[]}, view:(d.view)||{x:60,y:110,k:1}};
+}
+$('#jsonpick').onchange=e=>{
+  const f=e.target.files && e.target.files[0]; if(!f) return;
+  f.text().then(txt=>{
+    const b=boardFromJSON(JSON.parse(txt)); if(!b) throw 0;
+    openBoard(createBoard(b)); closeSheet(); fit(); toast('Quadro aberto do arquivo');
+  }).catch(()=>toast('Esse arquivo não parece um quadro da Prancheta.'));
+};
 
 $('#btn-export').onclick=()=>{
   openSheet(`<h2>Exportar</h2>
-    <p>Baixar arquivo não funciona dentro do visualizador. Use copiar e cole no destino.</p>
+    <p>Baixe o quadro em arquivo para guardar uma cópia ou levar para outro computador, ou copie e cole no destino.</p>
     <div class="chips" style="margin-bottom:12px">
+      <button class="chip" id="x-file">Baixar arquivo .json</button>
       <button class="chip" id="x-json">Copiar JSON</button>
       <button class="chip" id="x-mer">Copiar Mermaid</button>
       <button class="chip" id="x-png">Copiar imagem PNG</button>
@@ -1857,6 +1991,7 @@ $('#btn-export').onclick=()=>{
     </div>
     <textarea id="jsonarea" readonly></textarea>`);
   const ta=$('#jsonarea'); ta.value=JSON.stringify(state,null,2);
+  $('#x-file').onclick=()=>download(fileName(state.title)+'.json', JSON.stringify(state,null,2));
   $('#x-json').onclick=()=>copy(JSON.stringify(state), ta);
   $('#x-mer').onclick=()=>{ const m=toMermaid(); ta.value=m; copy(m, ta); };
   $('#x-png').onclick=copyPNG;
@@ -1864,7 +1999,7 @@ $('#btn-export').onclick=()=>{
 };
 $('#btn-import').onclick=()=>{
   openSheet(`<h2>Importar JSON</h2>
-    <p>Cole aqui um quadro exportado antes. O conteúdo atual é substituído.</p>
+    <p>Cole aqui um quadro exportado antes. Ele entra como um quadro novo na lista, sem mexer no atual.</p>
     <textarea id="jsonarea" placeholder='{"title":"...","nodes":[],"edges":[]}'></textarea>
     <div class="chips" style="margin-top:12px">
       <button class="chip" id="i-ok">Carregar</button>
@@ -1872,14 +2007,9 @@ $('#btn-import').onclick=()=>{
     </div>`);
   $('#i-ok').onclick=()=>{
     try{
-      const d=JSON.parse($('#jsonarea').value);
-      if(!d || !Array.isArray(d.nodes)) throw 0;
-      state={title:d.title||'Quadro importado', nodes:d.nodes, edges:d.edges||[]};
-      $('#title').value=state.title; clearSel();
-      nodeEls.forEach(el=>el.remove()); nodeEls.clear();
-      edgeEls.forEach(el=>el.remove()); edgeEls.clear();
-      labelEls.forEach(el=>el.remove()); labelEls.clear();
-      snapshot(); render(); fit(); $('#sheet').classList.remove('open'); toast('Quadro carregado');
+      const b=boardFromJSON(JSON.parse($('#jsonarea').value));
+      if(!b) throw 0;
+      openBoard(createBoard(b)); fit(); closeSheet(); toast('Quadro importado');
     }catch(err){ toast('JSON inválido. Confira o conteúdo colado.'); }
   };
   $('#i-close').onclick=()=>$('#sheet').classList.remove('open');
@@ -2083,11 +2213,45 @@ function drawTable(ctx,n,v){
 try{ const th=localStorage.getItem('prancheta.theme'); if(th) document.documentElement.setAttribute('data-theme',th); }catch(e){}
 function start(data){
   if(data && data.state && data.state.nodes){ state=data.state; if(data.view) view=data.view; }
-  else if(!load()){ seed(); view={x:40,y:90,k:1}; }
+  else{
+    migrateOld();
+    let id=hashId();
+    if(id && !readBoard(id)){ toast('Quadro não encontrado neste navegador. Abri o mais recente.'); id=null; }
+    if(!id){ const idx=readIndex().sort((a,b)=>b.updated-a.updated); id=idx.length ? idx[0].id : null; }
+    if(!id){ seed(); id=createBoard({state, view:{x:40,y:90,k:1}}); }
+    if(openBoard(id)){ setTool('select'); return; }
+    // sem armazenamento disponível: funciona só em memória
+    boardId=null; seed(); view={x:40,y:90,k:1};
+  }
   $('#title').value=state.title||'Quadro';
   hist=[JSON.stringify(state)]; hi=0; updateHistBtns();
   applyView(); render(); setTool('select');
 }
+window.addEventListener('hashchange', ()=>{
+  const id=hashId();
+  if(id && id!==boardId && !openBoard(id)) toast('Quadro não encontrado neste navegador.');
+});
+/* o mesmo quadro aberto em duas abas: a que não está editando adota a versão da outra */
+function applyRemote(raw){
+  let d; try{ d=JSON.parse(raw); }catch(e){ return; }
+  if(!d || !d.state || !Array.isArray(d.state.nodes)) return;
+  const s=JSON.stringify(d.state);
+  if(s===JSON.stringify(state)) return;
+  if(editing || cellEdit || (drag && drag.type!=='chain')){
+    clearTimeout(window.__remote); window.__remote=setTimeout(()=>applyRemote(lsGet(boardKey(boardId))), 600); return;
+  }
+  state=d.state;
+  hist=hist.slice(0,hi+1); hist.push(s); hi=hist.length-1; updateHistBtns();
+  if(document.activeElement!==$('#title')) $('#title').value=state.title||'';
+  document.title=(state.title||'Sem título')+' · Prancheta';
+  render();
+}
+window.addEventListener('storage', e=>{
+  if(e.key===INDEX_KEY){ if($('#blist')) renderBoardList(); return; }
+  if(!boardId || e.key!==boardKey(boardId)) return;
+  if(e.newValue) applyRemote(e.newValue);
+  else toast('Este quadro foi excluído em outra aba. Se continuar editando, ele volta para a lista.');
+});
 const hot=window.claude && window.claude.hot;
 if(hot && hot.snapshot) hot.snapshot(()=>({state,view}));
 if(hot && hot.ready) hot.ready(start); else start(hot && hot.data);

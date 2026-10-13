@@ -10,7 +10,7 @@ Editor de fluxogramas e mapas mentais em HTML puro, feito para substituir Whimsi
 - **Render híbrido**: nós são `<div>` posicionados em coordenadas de mundo; conexões são `<path>` dentro de um `<svg>` no mesmo container transformado. Isso permite texto editável nativo (`contenteditable`) dentro dos nós.
 - **Canvas infinito** via `transform: translate(x,y) scale(k)` no `#world`, com `transform-origin: 0 0`. O fundo pontilhado do `#stage` acompanha pan e zoom pelo `background-position` / `background-size`.
 - **Tema claro e escuro** por tokens CSS em `:root`, redefinidos em `@media (prefers-color-scheme: dark)` e em `:root[data-theme="dark"]`. Nenhuma cor literal fora dos tokens. A paleta dos nós tem 16 famílias (`slate, gray, blue, indigo, cyan, teal, green, lime, yellow, amber, orange, brown, red, rose, magenta, violet`), com nomes em português em `COLOR_NAMES`, cada uma com três tokens: preenchimento `--c-<cor>-f`, traço `--c-<cor>-s`, texto `--c-<cor>-i`.
-- **Persistência** em `localStorage` sob a chave `prancheta.v1`, sempre dentro de `try/catch`. Tema em `prancheta.theme`.
+- **Vários quadros** em `localStorage`, sempre dentro de `try/catch`: o índice fica em `prancheta.index` (`[{id,title,updated}]`) e cada quadro em `prancheta.q.<id>` (`{state,view}`). O quadro aberto vem do endereço (`#q=<id>`), então cada aba do navegador edita um quadro. Se o mesmo quadro estiver em duas abas, o evento `storage` faz a outra adotar a versão nova (`applyRemote`), esperando terminar edição ou arraste. A chave antiga `prancheta.v1` é migrada uma vez (`migrateOld`). Tema em `prancheta.theme`, painel em `prancheta.insp`. O armazenamento é por endereço: os quadros do arquivo local e os do site na Vercel são separados; para levar de um para o outro, use Baixar e Abrir arquivo .json na tela Quadros.
 
 ## Modelo de dados
 
@@ -98,7 +98,6 @@ Dentro do visualizador do Claude.ai, download de arquivo e `window.print()` não
 - Agrupamento de nós e camadas
 - Importação de Mermaid, não só exportação
 - Guias de alinhamento durante o arraste
-- Múltiplos quadros no mesmo arquivo, com troca por abas
 
 ## Preferências de trabalho
 
