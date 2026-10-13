@@ -2301,6 +2301,17 @@ function start(data){
   else{
     migrateOld();
     let id=hashId();
+    /* arquivo HTML com um quadro embutido (window.PRANCHETA_SEED): entra na lista uma vez e abre direto */
+    const sd=window.PRANCHETA_SEED;
+    if(sd && sd.board && Array.isArray(sd.board.nodes)){
+      const sk='prancheta.seed.'+sd.id;
+      let sid=lsGet(sk);
+      const fresh = !sid || !readBoard(sid);
+      if(fresh){ sid=createBoard({state:JSON.parse(JSON.stringify(sd.board)), view:{x:40,y:90,k:1}}); lsSet(sk,sid); }
+      if(readBoard(sid)){ if(!id) id=sid; if(fresh && id===sid){ openBoard(sid); fit(); setTool('select'); return; } }
+      else if(!id){ state=JSON.parse(JSON.stringify(sd.board)); boardId=null; $('#title').value=state.title;
+        hist=[JSON.stringify(state)]; hi=0; updateHistBtns(); applyView(); render(); fit(); setTool('select'); return; }
+    }
     if(id && !readBoard(id)){ toast('Quadro não encontrado neste navegador. Abri o mais recente.'); id=null; }
     if(!id){ const idx=readIndex().sort((a,b)=>b.updated-a.updated); id=idx.length ? idx[0].id : null; }
     if(!id){ seed(); id=createBoard({state, view:{x:40,y:90,k:1}}); }
